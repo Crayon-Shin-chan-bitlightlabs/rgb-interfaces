@@ -26,7 +26,7 @@ use rgbstd::interface::{
 use rgbstd::invoice::{Amount, Precision};
 use rgbstd::persistence::ContractStateRead;
 use rgbstd::stl::{AssetSpec, ContractTerms, Details};
-use rgbstd::{ContractId, SchemaId, Txid, WitnessInfo};
+use rgbstd::{ChainNet, ContractId, SchemaId, Txid, WitnessInfo};
 use strict_encoding::InvalidRString;
 
 use super::{Inflation, PrimaryIssue, Rgb20, Rgb20Info};
@@ -125,6 +125,16 @@ impl<S: ContractStateRead> Rgb20Wrapper<S> {
         precision: Precision,
     ) -> Result<PrimaryIssue, InvalidRString> {
         PrimaryIssue::testnet::<C>(issuer, ticker, name, details, precision)
+    }
+    pub fn issue<C: IssuerWrapper<IssuingIface = Rgb20>>(
+        issuer: &str,
+        ticker: &str,
+        name: &str,
+        details: Option<&str>,
+        precision: Precision,
+        chain_net: ChainNet,
+    ) -> Result<PrimaryIssue, InvalidRString> {
+        PrimaryIssue::issue::<C>(issuer, ticker, name, details, precision, chain_net)
     }
 
     pub fn testnet_det<C: IssuerWrapper<IssuingIface = Rgb20>>(

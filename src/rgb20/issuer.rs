@@ -82,6 +82,17 @@ impl PrimaryIssue {
         Self::testnet_int(C::issuer(), by, ticker, name, details, precision, false)
     }
 
+    pub fn issue<C: IssuerWrapper<IssuingIface = Rgb20>>(
+        by: &str,
+        ticker: &str,
+        name: &str,
+        details: Option<&str>,
+        precision: Precision,
+        chain_net: ChainNet,
+    ) -> Result<Self, InvalidRString> {
+        Self::init(C::issuer(), by, ticker, name, details, precision, chain_net, false)
+    }
+
     pub fn testnet_det<C: IssuerWrapper<IssuingIface = Rgb20>>(
         by: &str,
         ticker: &str,
@@ -127,6 +138,55 @@ impl PrimaryIssue {
                 types,
                 scripts,
                 ChainNet::BitcoinTestnet4,
+            ),
+        };
+        builder = builder
+            .add_global_state("spec", spec)
+            .expect("invalid RGB20 schema (token specification mismatch)");
+
+        Ok(Self {
+            builder,
+            terms,
+            issued: Amount::ZERO,
+            inflation: None,
+        })
+    }
+
+    fn init(
+        issuer: SchemaIssuer<Rgb20>,
+        by: &str,
+        ticker: &str,
+        name: &str,
+        details: Option<&str>,
+        precision: Precision,
+        chain_net: ChainNet,
+        deterministic: bool,
+    ) -> Result<Self, InvalidRString> {
+        let spec = AssetSpec::with(ticker, name, precision, details)?;
+        let terms = ContractTerms {
+            text: RicardianContract::default(),
+            media: None,
+        };
+
+        let (schema, main_iface_impl, types, scripts, features) = issuer.into_split();
+        let mut builder = match deterministic {
+            false => ContractBuilder::with(
+                Identity::from_str(by).expect("invalid issuer identity string"),
+                features.iface(),
+                schema,
+                main_iface_impl,
+                types,
+                scripts,
+                chain_net,
+            ),
+            true => ContractBuilder::deterministic(
+                Identity::from_str(by).expect("invalid issuer identity string"),
+                features.iface(),
+                schema,
+                main_iface_impl,
+                types,
+                scripts,
+                chain_net,
             ),
         };
         builder = builder
